@@ -1,6 +1,3 @@
-
-Copy
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -915,7 +912,7 @@ async function dbLoad(){
 }
 async function dbInit(){
   if(!currentUser)return false;
-  try{const r=await fetch(`${SB_URL}/rest/v1/teacher_data`,{method:'POST',headers:{...authHeaders(),'Prefer':'return=minimal,resolution=ignore-duplicates'},body:JSON.stringify({user_id:currentUser.id,display_name:displayName||currentUser.email})});return r.ok;}catch(e){return false;}
+  try{const r=await fetch(`${SB_URL}/rest/v1/teacher_data`,{method:'POST',headers:{...authHeaders(),'Prefer':'return=minimal,resolution=merge-duplicates'},body:JSON.stringify({user_id:currentUser.id,display_name:displayName||currentUser.email})});return r.ok;}catch(e){return false;}
 }
 async function dbSave(payload){
   if(!currentUser)return false;
