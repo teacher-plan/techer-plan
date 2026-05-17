@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>خطتي الفصلية</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet"/>
+<script src="https://accounts.google.com/gsi/client" async></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="xlsx.full.min.js"></script>
 <style>
@@ -1024,8 +1025,13 @@ function showAuthState(state){
 async function handleAuthSession(session){
   if(!session||!session.user){document.getElementById('auth-screen').classList.remove('hidden');showAuthState('auth-login');return;}
   currentUser=session.user;userToken=session.access_token;
-  // Get Drive access token from provider token
-  driveAccessToken=session.provider_token||session.access_token;
+  // Get Drive token - try provider_token first, then request separately
+  if(session.provider_token){
+    driveAccessToken=session.provider_token;
+  } else {
+    // Request Drive token via Google Identity Services
+    requestDriveToken();
+  }
   document.getElementById('auth-screen').classList.remove('hidden');showAuthState('auth-loading');
   const email=currentUser.email;
   const allowed=await checkAllowed(email);
@@ -1034,7 +1040,6 @@ async function handleAuthSession(session){
   const data=await dbLoad();
   if(!data||!data.display_name){showAuthState('auth-onboard');const guess=currentUser.user_metadata?.full_name||'';document.getElementById('onboard-name').value=guess;setTimeout(()=>document.getElementById('onboard-name').focus(),200);return;}
   displayName=data.display_name;
-  // Check if setup is done
   if(!data.teacher_config||!data.teacher_config.grades||!data.teacher_config.grades.length){
     document.getElementById('auth-screen').classList.add('hidden');
     showSetupScreen();
@@ -1042,6 +1047,21 @@ async function handleAuthSession(session){
   }
   document.getElementById('auth-screen').classList.add('hidden');
   showApp(data);
+}
+ 
+function requestDriveToken(){
+  if(!window.google?.accounts?.oauth2)return;
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:'852355786683-478hva93jlag6i26m6euvpqefiqq42nr.apps.googleusercontent.com',
+    scope:'https://www.googleapis.com/auth/drive.file',
+    callback:(resp)=>{
+      if(resp.access_token){
+        driveAccessToken=resp.access_token;
+        toast('✅ تم ربط Google Drive','ok');
+      }
+    }
+  });
+  client.requestAccessToken({prompt:''});
 }
 async function completeOnboard(){
   const name=document.getElementById('onboard-name').value.trim();
@@ -1832,4 +1852,3 @@ function toast(msg,type=false){const el=document.getElementById('toast');el.text
 </script>
 </body>
 </html>
- 
